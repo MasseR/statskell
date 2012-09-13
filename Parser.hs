@@ -18,7 +18,7 @@ parseMsg msg = runIdentity $ runErrorT $ do
     parseMsg msg = case T.splitOn "|" msg of
                     ret@[_, _, _, _] -> return ret
                     _ -> fail $ "Could not parse msg: " ++ (T.unpack msg)
-    parseType (T.stripPrefix "counter" -> Just _) = return Counter
+    parseType (T.stripPrefix "gauge" -> Just _) = return Gauge
     parseType (T.stripPrefix "absolute" -> Just _) = return Absolute
     parseType _type = fail $ "Could not parse type: " ++ (T.unpack _type)
     parseValue value = case reads (T.unpack value) of
