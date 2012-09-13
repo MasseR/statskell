@@ -6,12 +6,7 @@ import Data.Text.Lazy (Text)
 import qualified Data.Text.Lazy as T
 import Control.Monad.Error
 import Control.Monad.Identity (runIdentity)
-
-type Bucket = Text
-type Value = Double
-data Type = Counter | Absolute deriving Show
-data Aggregate = Average | Max | Min | Sum deriving Show
-data Stats = Stats Bucket Value Type Aggregate deriving Show
+import Types
 
 parseMsg :: Text -> Either String Stats
 parseMsg msg = runIdentity $ runErrorT $ do
