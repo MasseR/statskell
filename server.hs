@@ -41,8 +41,8 @@ flusher state = forever $ do
     rrdfile = "stats.rrd"
     rrdtool [] _ = return ()
     rrdtool buckets values = createProcess (proc "rrdtool" ["updatev", rrdfile, "--template", (concat $ intersperse ":" buckets), (concat $ intersperse ":" ("N" : values))]) >> return ()
-    aggregateValue [] = 0
-    aggregateValue xs@(x:_) = case aggregate ^$ x of
+    consolidateValue [] = 0
+    consolidateValue xs@(x:_) = case consolidate ^$ x of
                               Max -> foldr1 max [value ^$ stat | stat <- xs]
                               Min -> foldr1 min [value ^$ stat | stat <- xs]
                               Sum -> foldr1 (+) [value ^$ stat | stat <- xs]
@@ -51,7 +51,7 @@ flusher state = forever $ do
     average (!x:xs) !n !acc = average xs (n+1) (acc + x)
     exportValues m = do
       let buckets = map T.unpack $ M.keys m
-          values = [show (aggregateValue value) | value <- M.elems m]
+          values = [show (consolidateValue value) | value <- M.elems m]
       _ <- rrdtool buckets values
       return ()
 

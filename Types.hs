@@ -3,12 +3,12 @@ module Types (
     Bucket
   , Value
   , Type (..)
-  , Aggregate (..)
+  , Consolidation (..)
   , Stats (..)
   , State
   , bucket
   , value
-  , aggregate
+  , consolidate
   , type_
   , module Data.Text.Lazy
   , module Control.Concurrent.STM
@@ -22,12 +22,12 @@ import Data.Lens.Template
 type Bucket = Text
 type Value = Double
 data Type = Gauge | Absolute deriving Show
-data Aggregate = Average | Max | Min | Sum deriving Show
+data Consolidation = Average | Max | Min | Sum deriving Show
 data Stats = Stats {
     _bucket :: Bucket
   , _value :: Value
   , _type_ :: Type
-  , _aggregate :: Aggregate
+  , _consolidate :: Consolidation
 } deriving Show
 
 type State = TVar (Map Bucket [Stats])
