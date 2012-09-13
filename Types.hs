@@ -1,4 +1,11 @@
-module Types where
+module Types (
+    Bucket
+  , Value
+  , Type (..)
+  , Aggregate (..)
+  , Stats (..)
+  , module Data.Text.Lazy
+) where
 
 import Data.Text.Lazy (Text)
 
