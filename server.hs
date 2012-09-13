@@ -13,6 +13,8 @@ import qualified Data.Text.Lazy.IO as TI
 import qualified Data.Text.Lazy as T
 import Data.Lens.Common
 import Control.Monad
+import System.Process
+import Data.List (intersperse)
 
 main :: IO ()
 main = do
@@ -37,6 +39,8 @@ flusher state = forever $ do
   exportValues values
   where
     rrdfile = "stats.rrd"
+    rrdtool [] _ = return ()
+    rrdtool buckets values = createProcess (proc "rrdtool" ["updatev", rrdfile, "--template", (concat $ intersperse ":" buckets), (concat $ intersperse ":" ("N" : values))]) >> return ()
     aggregateValue [] = 0
     aggregateValue xs@(x:_) = case aggregate ^$ x of
                               Max -> foldr1 max [value ^$ stat | stat <- xs]
@@ -45,8 +49,11 @@ flusher state = forever $ do
                               Average -> average [value ^$ stat | stat <- xs] 0 0
     average [] n acc = acc / n
     average (!x:xs) !n !acc = average xs (n+1) (acc + x)
-    exportValues values = forM_ (M.assocs values) $ \(key, value) -> do
-      putStrLn $ (T.unpack key) ++ " " ++ (show $ aggregateValue value)
+    exportValues m = do
+      let buckets = map T.unpack $ M.keys m
+          values = [show (aggregateValue value) | value <- M.elems m]
+      _ <- rrdtool buckets values
+      return ()
 
 messageHandler :: State -> Text -> IO ()
 messageHandler state msg = do
