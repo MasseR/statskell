@@ -29,7 +29,7 @@ main = do
     msg <- TI.hGetLine handle
     -- Might be too small granularity. If this proofs to be a problem,
     -- create a worker, producer with channels
-    forkIO $ messageHandler state msg
+    forkIO $ messageHandler errorChan state msg
 
 errorPrinter :: ErrorChan -> IO ()
 errorPrinter echan = do
@@ -64,9 +64,9 @@ flusher state = forever $ do
       _ <- rrdtool buckets values
       return ()
 
-messageHandler :: State -> Text -> IO ()
-messageHandler state msg = do
+messageHandler :: ErrorChan -> State -> Text -> IO ()
+messageHandler echan state msg = do
   case parseMsg msg of
-       Left err -> putStrLn err
+       Left err -> atomically $ writeTChan echan $ T.pack err
        Right stat -> atomically $ do
          modifyTVar state (M.insertWith' ((:) . head) (bucket ^$ stat) [stat])
