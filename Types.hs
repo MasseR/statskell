@@ -5,6 +5,7 @@ module Types (
   , Type (..)
   , Consolidation (..)
   , Stats (..)
+  , ErrorChan
   , State
   , bucket
   , value
@@ -16,7 +17,7 @@ module Types (
 
 import Data.Text.Lazy (Text)
 import Data.Map (Map)
-import Control.Concurrent.STM (TVar)
+import Control.Concurrent.STM (TVar, TChan)
 import Data.Lens.Template
 
 type Bucket = Text
@@ -31,5 +32,6 @@ data Stats = Stats {
 } deriving Show
 
 type State = TVar (Map Bucket [Stats])
+type ErrorChan = TChan Text
 
 $(makeLens ''Stats)

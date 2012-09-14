@@ -5,7 +5,7 @@ import Data.Text.Lazy (Text)
 import Types
 import Parser
 import Network.Socket
-import System.IO (IOMode (ReadMode))
+import System.IO (IOMode (ReadMode), stderr)
 import Control.Concurrent.STM
 import Control.Concurrent
 import qualified Data.Map as M
@@ -19,6 +19,8 @@ import Data.List (intersperse)
 main :: IO ()
 main = do
   state <- atomically $ newTVar (M.empty)
+  errorChan <- atomically $ newTChan
+  forkIO $ errorPrinter errorChan
   forkIO $ flusher state
   sock <- socket AF_INET Datagram defaultProtocol
   bindSocket sock (SockAddrInet 4242 iNADDR_ANY)
@@ -28,6 +30,13 @@ main = do
     -- Might be too small granularity. If this proofs to be a problem,
     -- create a worker, producer with channels
     forkIO $ messageHandler state msg
+
+errorPrinter :: ErrorChan -> IO ()
+errorPrinter echan = do
+  readChan <- atomically $ dupTChan echan
+  forever $ do
+    err <- atomically $ readTChan readChan
+    TI.hPutStrLn stderr err
 
 flusher :: State -> IO ()
 flusher state = forever $ do
