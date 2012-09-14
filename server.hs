@@ -16,12 +16,22 @@ import Control.Monad
 import System.Process
 import Data.List (intersperse)
 import Control.Monad.Reader
+import System.Environment (getArgs, getEnv)
+import System.FilePath.Posix ((</>))
+import System.Directory
+import Data.Maybe (maybe)
 
 getSettings :: IO Settings
 getSettings = do
+  args <- getArgs
+  dbdir <- case null args of
+       True -> do
+         home <- getEnv "HOME"
+         return $ home </> "stats.rrd"
+       False -> return $ head args
   stats <- atomically $ newTVar (M.empty)
   errorChan <- atomically $ newBroadcastTChan
-  return $ Settings stats errorChan 4242 "stats.rrd"
+  return $ Settings stats errorChan 4242 dbdir
 
 main :: IO ()
 main = do
