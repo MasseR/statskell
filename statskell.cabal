@@ -59,6 +59,5 @@ executable statskell
                        text == 0.11.*,
                        stm == 2.4.*,
                        network == 2.3.*,
-                       mtl == 2.1.*,
-                       cmdargs == 0.9.*
+                       mtl == 2.1.*
   
