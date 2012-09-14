@@ -15,13 +15,14 @@ import Data.Lens.Common
 import Control.Monad
 import System.Process
 import Data.List (intersperse)
+import Control.Monad.Reader
 
 main :: IO ()
 main = do
   state <- atomically $ newTVar (M.empty)
-  errorChan <- atomically $ newTChan
-  forkIO $ errorPrinter errorChan
-  forkIO $ flusher state
+  errorChan <- atomically $ newBroadcastTChan
+  forkIO $ runStatskellT errorPrinter undefined
+  forkIO $ runStatskellT flusher undefined
   sock <- socket AF_INET Datagram defaultProtocol
   bindSocket sock (SockAddrInet 4242 iNADDR_ANY)
   handle <- socketToHandle sock ReadMode
@@ -29,19 +30,20 @@ main = do
     msg <- TI.hGetLine handle
     -- Might be too small granularity. If this proofs to be a problem,
     -- create a worker, producer with channels
-    forkIO $ messageHandler errorChan state msg
+    forkIO $ runStatskellT (messageHandler msg) undefined
 
-errorPrinter :: ErrorChan -> IO ()
-errorPrinter echan = do
-  readChan <- atomically $ dupTChan echan
-  forever $ do
-    err <- atomically $ readTChan readChan
-    TI.hPutStrLn stderr err
+errorPrinter :: Statskell IO ()
+errorPrinter = do
+  readChan <- asks errorChan >>= liftIO . atomically . dupTChan
+  liftIO $ forever $ do
+    err <- liftIO $ atomically $ readTChan readChan
+    liftIO $ TI.hPutStrLn stderr err
 
-flusher :: State -> IO ()
-flusher state = forever $ do
+flusher :: Statskell IO ()
+flusher = ask >>= \settings -> liftIO $ forever $ do
   threadDelay 10000000
   values <- atomically $ do
+    let state = stats settings
     oldMap <- readTVar state
     writeTVar state (M.map (const []) oldMap)
     return oldMap
@@ -64,9 +66,11 @@ flusher state = forever $ do
       _ <- rrdtool buckets values
       return ()
 
-messageHandler :: ErrorChan -> State -> Text -> IO ()
-messageHandler echan state msg = do
-  case parseMsg msg of
+messageHandler :: Text -> Statskell IO ()
+messageHandler msg = do
+  echan <- asks errorChan
+  state <- asks stats
+  liftIO $ case parseMsg msg of
        Left err -> atomically $ writeTChan echan $ T.pack err
        Right stat -> atomically $ do
          modifyTVar state (M.insertWith' ((:) . head) (bucket ^$ stat) [stat])

@@ -1,3 +1,4 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# Language TemplateHaskell #-}
 module Types (
     Bucket
@@ -5,8 +6,9 @@ module Types (
   , Type (..)
   , Consolidation (..)
   , Stats (..)
-  , ErrorChan
-  , State
+  , Statskell
+  , Settings (..)
+  , runStatskellT
   , bucket
   , value
   , consolidate
@@ -19,6 +21,8 @@ import Data.Text.Lazy (Text)
 import Data.Map (Map)
 import Control.Concurrent.STM (TVar, TChan)
 import Data.Lens.Template
+import Control.Monad.Reader
+import Control.Monad
 
 type Bucket = Text
 type Value = Double
@@ -31,7 +35,16 @@ data Stats = Stats {
   , _consolidate :: Consolidation
 } deriving Show
 
-type State = TVar (Map Bucket [Stats])
-type ErrorChan = TChan Text
+data Settings = Settings {
+    stats :: TVar (Map Bucket [Stats])
+  , errorChan :: TChan Text
+  , port :: Int
+  , databaseDir :: FilePath
+}
+
+newtype Statskell m a = Statskell (ReaderT Settings m a) deriving (Monad, MonadIO, MonadReader Settings)
+
+runStatskellT :: Monad m =>  Statskell m a -> Settings -> m a
+runStatskellT (Statskell statskell) = runReaderT statskell
 
 $(makeLens ''Stats)
