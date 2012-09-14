@@ -19,7 +19,7 @@ import Control.Monad.Reader
 import System.Environment (getArgs, getEnv)
 import System.FilePath.Posix ((</>))
 import System.Directory
-import Data.Maybe (maybe)
+import Data.Maybe (maybe, listToMaybe)
 
 getSettings :: IO Settings
 getSettings = do
@@ -29,9 +29,10 @@ getSettings = do
          home <- getEnv "HOME"
          return $ home </> "stats.rrd"
        False -> return $ head args
+  let port = PortNum $ maybe 4242 read (listToMaybe $ tail args)
   stats <- atomically $ newTVar (M.empty)
   errorChan <- atomically $ newBroadcastTChan
-  return $ Settings stats errorChan 4242 dbdir
+  return $ Settings stats errorChan port dbdir
 
 main :: IO ()
 main = do
