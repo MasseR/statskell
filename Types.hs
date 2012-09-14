@@ -23,6 +23,7 @@ import Control.Concurrent.STM (TVar, TChan)
 import Data.Lens.Template
 import Control.Monad.Reader
 import Control.Monad
+import Network.Socket (PortNumber)
 
 type Bucket = Text
 type Value = Double
@@ -38,7 +39,7 @@ data Stats = Stats {
 data Settings = Settings {
     stats :: TVar (Map Bucket [Stats])
   , errorChan :: TChan Text
-  , port :: Int
+  , port :: PortNumber
   , databaseDir :: FilePath
 }
 
