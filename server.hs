@@ -29,10 +29,9 @@ getSettings = do
          home <- getEnv "HOME"
          return $ home </> "stats.rrd"
        False -> return $ head args
-  let port = PortNum $ maybe 4242 read (listToMaybe $ tail args)
   stats <- atomically $ newTVar (M.empty)
   errorChan <- atomically $ newBroadcastTChan
-  return $ Settings stats errorChan port dbdir
+  return $ Settings stats errorChan 4242 dbdir
 
 main :: IO ()
 main = do
