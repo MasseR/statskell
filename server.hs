@@ -17,20 +17,25 @@ import System.Process
 import Data.List (intersperse)
 import Control.Monad.Reader
 
+getSettings :: IO Settings
+getSettings = do
+  stats <- atomically $ newTVar (M.empty)
+  errorChan <- atomically $ newBroadcastTChan
+  return $ Settings stats errorChan 4242 "stats.rrd"
+
 main :: IO ()
 main = do
-  state <- atomically $ newTVar (M.empty)
-  errorChan <- atomically $ newBroadcastTChan
-  forkIO $ runStatskellT errorPrinter undefined
-  forkIO $ runStatskellT flusher undefined
+  settings <- getSettings
+  forkIO $ runStatskellT errorPrinter settings
+  forkIO $ runStatskellT flusher settings
   sock <- socket AF_INET Datagram defaultProtocol
-  bindSocket sock (SockAddrInet 4242 iNADDR_ANY)
+  bindSocket sock (SockAddrInet (port settings) iNADDR_ANY)
   handle <- socketToHandle sock ReadMode
   forever $ do
     msg <- TI.hGetLine handle
     -- Might be too small granularity. If this proofs to be a problem,
     -- create a worker, producer with channels
-    forkIO $ runStatskellT (messageHandler msg) undefined
+    forkIO $ runStatskellT (messageHandler msg) settings
 
 errorPrinter :: Statskell IO ()
 errorPrinter = do
@@ -47,11 +52,10 @@ flusher = ask >>= \settings -> liftIO $ forever $ do
     oldMap <- readTVar state
     writeTVar state (M.map (const []) oldMap)
     return oldMap
-  exportValues values
+  exportValues (databaseDir settings) values
   where
-    rrdfile = "stats.rrd"
-    rrdtool [] _ = return ()
-    rrdtool buckets values = createProcess (proc "rrdtool" ["updatev", rrdfile, "--template", (concat $ intersperse ":" buckets), (concat $ intersperse ":" ("N" : values))]) >> return ()
+    rrdtool _ [] _ = return ()
+    rrdtool rrdfile buckets values = createProcess (proc "rrdtool" ["updatev", rrdfile, "--template", (concat $ intersperse ":" buckets), (concat $ intersperse ":" ("N" : values))]) >> return ()
     consolidateValue [] = 0
     consolidateValue xs@(x:_) = case consolidate ^$ x of
                               Max -> foldr1 max [value ^$ stat | stat <- xs]
@@ -60,10 +64,10 @@ flusher = ask >>= \settings -> liftIO $ forever $ do
                               Average -> average [value ^$ stat | stat <- xs] 0 0
     average [] n acc = acc / n
     average (!x:xs) !n !acc = average xs (n+1) (acc + x)
-    exportValues m = do
+    exportValues path m = do
       let buckets = map T.unpack $ M.keys m
           values = [show (consolidateValue value) | value <- M.elems m]
-      _ <- rrdtool buckets values
+      _ <- rrdtool path buckets values
       return ()
 
 messageHandler :: Text -> Statskell IO ()
