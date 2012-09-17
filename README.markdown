@@ -1,8 +1,8 @@
 Abstract
 ========
 
-statskell is a statistics collection daemon. It came to be after reading
-[Measure anything, measure
+statskell is a daemon that collects statistics and propagates them to a proper
+db. It came to be after reading [Measure anything, measure
 everything](http://codeascraft.etsy.com/2011/02/15/measure-anything-measure-everything/)
 article. The purpose is to have a simple interface for counting 'stuff'. For
 example you can record failed and successful login attempts of your site. If
