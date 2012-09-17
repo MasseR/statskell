@@ -20,6 +20,7 @@ import System.Environment (getArgs, getEnv)
 import System.FilePath.Posix ((</>))
 import System.Directory
 import Data.Maybe (maybe, listToMaybe)
+import System.IO.Error (catchIOError)
 
 getSettings :: IO Settings
 getSettings = do
@@ -55,17 +56,28 @@ errorPrinter = do
     liftIO $ TI.hPutStrLn stderr err
 
 flusher :: Statskell IO ()
-flusher = ask >>= \settings -> liftIO $ forever $ do
-  threadDelay 10000000
-  values <- atomically $ do
-    let state = stats settings
-    oldMap <- readTVar state
-    writeTVar state (M.map (const []) oldMap)
-    return oldMap
-  exportValues (databaseDir settings) values
+flusher = loop
   where
+    loop = do
+      settings <- ask
+      liftIO $ threadDelay 10000000
+      values <- liftIO $ atomically $ do
+        let state = stats settings
+        oldMap <- readTVar state
+        writeTVar state (M.map (const []) oldMap)
+        return oldMap
+      exportValues (databaseDir settings) values
+      loop
     rrdtool _ [] _ = return ()
-    rrdtool rrdfile buckets values = createProcess (proc "rrdtool" ["updatev", rrdfile, "--template", (concat $ intersperse ":" buckets), (concat $ intersperse ":" ("N" : values))]) >> return ()
+    rrdtool rrdfile buckets values = do
+      echan <- asks errorChan
+      liftIO $ catchIOError (readProcess "rrdtool" [
+        "updatev",
+        rrdfile,
+        "--template",
+        (concat $ intersperse ":" buckets),
+        (concat $ intersperse ":" ("N" : values))] "" >>= putStr) $
+          \err -> atomically $ writeTChan echan (T.pack $ show err)
     consolidateValue [] = 0
     consolidateValue xs@(x:_) = case consolidate ^$ x of
                               Max -> foldr1 max [value ^$ stat | stat <- xs]
