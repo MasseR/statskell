@@ -2,15 +2,15 @@ Abstract
 ========
 
 statskell is a statistics collection daemon. It came to be after reading
-[http://codeascraft.etsy.com/2011/02/15/measure-anything-measure-everything/](Measure
-anything, measure everything) article. The purpose is to have a simple
-interface for counting 'stuff'. For example you can record failed and
-successful login attempts of your site. If there is a weird spike in the failed
-login attempts, you can probably assume that there has been some sort of
-hacking attempt. Another use-case is for example calculating how many emails
-you receive within a timeperiod. I have a fetchmail/procmail setup, and I can
-increase the counter from within procmail when any email arrive, statskell then
-flushes the received counter to rrdtool.
+[Measure anything, measure
+everything](http://codeascraft.etsy.com/2011/02/15/measure-anything-measure-everything/)
+article. The purpose is to have a simple interface for counting 'stuff'. For
+example you can record failed and successful login attempts of your site. If
+there is a weird spike in the failed login attempts, you can probably assume
+that there has been some sort of hacking attempt. Another use-case is for
+example calculating how many emails you receive within a timeperiod. I have a
+fetchmail/procmail setup, and I can increase the counter from within procmail
+when any email arrive, statskell then flushes the received counter to rrdtool.
 
 statskell works by receiving udp messages, aggregating them and then flushing
 them out after a 10 second period. It flushes the aggregated stats into a
@@ -22,10 +22,10 @@ Use
 ===
 
 statskell is in alpha-stage, but it should be stable enough. All you need to is
-to [http://oss.oetiker.ch/rrdtool/doc/rrdcreate.en.html](create the rrdtool
-database) and start the server. It listens on port 4242 udp packets and writes
-the results into `stats.rrd` file into the directory where the server has been
-started.
+to [create the rrdtool
+database](http://oss.oetiker.ch/rrdtool/doc/rrdcreate.en.html) and start the
+server. It listens on port 4242 udp packets and writes the results into
+`stats.rrd` file into the directory where the server has been started.
 
 Protocol
 --------
