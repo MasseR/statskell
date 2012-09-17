@@ -36,15 +36,15 @@ The protocol is a simple 4 column protocol separated by pipe character ('|').
 
 Possible values for the type field:
 
-- absolute Absolute value. See rrdtool documentation for what it means
-- gauge Gauged value. See rrdtool documentation for what it means
+- `absolute` Absolute value. See rrdtool documentation for what it means
+- `gauge` Gauged value. See rrdtool documentation for what it means
 
 Possible values for the consolidation field:
 
-- sum Sum together all the values. For example if you get results faster then the flush-delay, the values are added together
-- max Select the maximum of all the values
-- min Select the minimum of all the values
-- average Calculate the average of all the values
+- `sum` Sum together all the values. For example if you get results faster then the flush-delay, the values are added together
+- `max` Select the maximum of all the values
+- `min` Select the minimum of all the values
+- `average` Calculate the average of all the values
 
 Thank you
 =========
