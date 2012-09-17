@@ -46,11 +46,11 @@ Possible values for the consolidation field:
 - min Select the minimum of all the values
 - average Calculate the average of all the values
 
+Thank you
+=========
+
+Thank you for my employer dmgazelle.com for allowing me to use my time on this project.
+
 Todo
 ====
 
-- Configuration
-    - Configurable port
-    - Configurable database path
-- Better error reporting
-    - Error reporting happens concurrently, mixing the letters.
