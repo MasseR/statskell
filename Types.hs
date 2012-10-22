@@ -27,15 +27,12 @@ module Types (
 
 import qualified Data.Vector.Unboxed as V
 import Data.Text.Lazy (Text)
-import Data.Map (Map)
 import Control.Concurrent.STM (TVar, TChan)
 import Data.Lens.Template
 import Control.Monad.Reader
-import Control.Monad
 import Network.Socket (PortNumber)
 import GHC.Generics (Generic)
 import Data.Serialize
-import qualified Data.Text.Lazy as T
 import qualified Data.Text.Lazy.Encoding as TE
 
 data Message = AddItem Stats | AddArchive Int Integer Consolidation deriving Show
