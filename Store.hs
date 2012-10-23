@@ -9,7 +9,8 @@ module Store (
 )
 where
 
-import Data.List (sortBy, unfoldr, sort)
+import Data.List (sortBy, unfoldr, sort, find, group)
+import Data.Function (on)
 import Types
 
 
@@ -21,6 +22,31 @@ addArchive elements xff consolidation (RRA (Meta buffer archive)) = let
   newArchive = Archive elements xff consolidation []
   in RRA (Meta buffer (sortBy sortByXFF (newArchive : archive)))
   where sortByXFF (Archive _ axff _ _) (Archive _ bxff _ _) = axff `compare` bxff
+
+names :: RRA -> [Text]
+names (RRA (Meta _ archives)) = map head $ group $ sort $ concat [[bufferName b | b <- archiveBuffers a] | a <- archives]
+query :: Integer -> Integer -> Text -> Consolidation -> Query
+query start end name consolidation (RRA (Meta _ archives)) = let
+  sortedArchives = sortBy (compare `on` archiveInterval) archives
+  values = classifyRange sortedArchives Nothing []
+  in reverse $ dropWhile (\x -> bufferElementTime x > end) $ reverse $ dropWhile (\x -> bufferElementTime x < start) values
+  where
+    classifyRange [] _ smallest = smallest
+    classifyRange (archive:xs) val smallest = case find (\b -> bufferName b == name) (archiveBuffers archive) of
+                                      Nothing -> classifyRange xs val smallest
+                                      Just buffer -> let
+                                        classification = classifyBuffer elements
+                                        elements = bufferElements buffer
+                                        in case maybe LT (compare classification) val of
+                                             LT -> classifyRange xs (Just classification) elements
+                                             _ -> classifyRange xs val smallest
+    classifyBuffer [] = start + end
+    classifyBuffer b | length b < 2 = (classifyStart $ bufferElementTime $ head b) + (classifyEnd $ bufferElementTime $ head b)
+                     | otherwise = (classifyStart $ bufferElementTime $ head b) + (classifyEnd $ bufferElementTime $ last b)
+    classifyStart bfirst | bfirst <= start = 0
+                         | otherwise = bfirst - start
+    classifyEnd bend | bend >= end = 0
+                     | otherwise = end - bend
 
 consolidate :: [Buffer] -> [Archive] -> [Archive]
 consolidate [] xs = xs
