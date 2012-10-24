@@ -77,7 +77,6 @@ flusher = loop
       liftIO $ threadDelay 10000000
       liftIO $ atomically $ modifyTVar (stats settings) (S.consolidateRRA)
       rra <- liftIO $ atomically $ readTVar (stats settings)
-      liftIO $ putStrLn $ "rra is currently: " ++ show rra
       liftIO $ B.writeFile (databaseDir settings) $ encode rra
       loop
 

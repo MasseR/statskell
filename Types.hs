@@ -16,6 +16,7 @@ module Types (
   , BufferElement(..)
   , Archive(..)
   , Meta(..)
+  , Query
   , consolidationFunc
   , runStatskellT
   , bucket
@@ -38,6 +39,7 @@ import qualified Data.Text.Lazy.Encoding as TE
 data Message = AddItem Stats | AddArchive Int Integer Consolidation deriving Show
 type Bucket = Text
 type Value = Double
+type Query = RRA -> [BufferElement]
 data Type = Gauge | Absolute deriving Show
 data Stats = Stats {
     _bucket :: Bucket
@@ -60,7 +62,7 @@ data Archive = Archive {
   , archiveConsolidation :: !Consolidation
   , archiveBuffers :: [Buffer]
   } deriving (Generic, Show)
-data Consolidation = Sum | Average | Max | Min | Latest deriving (Generic, Show, Read)
+data Consolidation = Sum | Average | Max | Min | Latest deriving (Generic, Show, Read, Eq)
 data Buffer = Buffer {
     bufferName :: !Text
   , bufferElements :: [BufferElement]
